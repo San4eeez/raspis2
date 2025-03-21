@@ -1,0 +1,15 @@
+{
+    "total_users": 1,
+    "daily_requests": {
+        "2025-03-21": 1
+    },
+    "user_requests": {
+        "806697034": {
+            "username": "doxling",
+            "total_requests": 1,
+            "daily_requests": {
+                "2025-03-21": 1
+            }
+        }
+    }
+}

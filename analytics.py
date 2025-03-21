@@ -3,15 +3,28 @@ from datetime import date
 from aiogram import Bot
 from aiogram.types import FSInputFile
 
-# Словарь для хранения аналитики
-analytics_data = {
-    "total_users": 0,  # Общее количество пользователей
-    "daily_requests": {},  # Запросы по дням
-    "user_requests": {}  # Запросы по пользователям
-}
+# Путь к файлу для сохранения аналитики
+ANALYTICS_FILE = "analytics.json"
 
 # Белый список администраторов
 ADMIN_IDS = [806697034]  # Ваш ID
+
+# Загружаем аналитику из файла (если файл существует)
+try:
+    with open(ANALYTICS_FILE, "r", encoding="utf-8") as file:
+        analytics_data = json.load(file)
+except FileNotFoundError:
+    analytics_data = {
+        "total_users": 0,  # Общее количество пользователей
+        "daily_requests": {},  # Запросы по дням
+        "user_requests": {}  # Запросы по пользователям
+    }
+
+
+def save_analytics():
+    """Сохраняет аналитику в файл."""
+    with open(ANALYTICS_FILE, "w", encoding="utf-8") as file:
+        json.dump(analytics_data, file, ensure_ascii=False, indent=4)
 
 
 def log_request(user_id: int, username: str):
@@ -40,6 +53,9 @@ def log_request(user_id: int, username: str):
     if today not in analytics_data["daily_requests"]:
         analytics_data["daily_requests"][today] = 0
     analytics_data["daily_requests"][today] += 1
+
+    # Сохраняем изменения в файл
+    save_analytics()
 
 
 async def send_analytics(bot: Bot, chat_id: int):
