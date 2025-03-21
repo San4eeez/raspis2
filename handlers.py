@@ -1,6 +1,6 @@
 # handlers.py
 
-from aiogram import Router, types
+from aiogram import Router, types, Bot
 from aiogram.filters import Command, CommandObject
 from aiogram.types import (
     Message,
@@ -113,28 +113,39 @@ async def callback_handler(callback: CallbackQuery):
 
 
 @router.inline_query()
-async def inline_query_handler(inline_query: InlineQuery):
+async def inline_handler(query: types.InlineQuery):
     """Обработчик инлайн-запросов."""
-    # Варианты команд для инлайн-режима
-    commands = [
-        {"title": "📌 Расписание на сегодня", "description": "Показать расписание на сегодня", "command": "сегодня"},
-        {"title": "📅 Ближайшее расписание", "description": "Показать ближайшее расписание", "command": "расписание"},
-        {"title": "🔄 Сменить группу", "description": "Изменить выбранную группу", "command": "сменить_группу"},
-        {"title": "👨‍🏫 Найти преподавателя", "description": "Найти преподавателя", "command": "преподаватель"},
-    ]
+    user_id = query.from_user.id
+    group_id = get_user_group(user_id)
 
-    # Создаем список результатов для инлайн-режима
+    # Получаем расписание на сегодня
+    today_date = datetime.now().strftime("%d.%m.%Y")
+    schedule_today = fetch_schedule(group_id, entity_type="group", target_date=today_date)
+    message_text_today = "\n\n".join(schedule_today) if schedule_today else "Расписание на сегодня не найдено."
+
+    # Получаем расписание на неделю
+    schedule_week = fetch_schedule(group_id, entity_type="group")
+    message_text_week = "\n\n".join(schedule_week) if schedule_week else "Расписание на неделю не найдено."
+
+    # Формируем результаты
     results = [
-        InlineQueryResultArticle(
-            id=str(index),
-            title=cmd["title"],
-            description=cmd["description"],
-            input_message_content=InputTextMessageContent(
-                message_text=f"@{inline_query.bot.username} {cmd['command']}"
+        types.InlineQueryResultArticle(
+            id="1",  # Уникальный идентификатор результата
+            title="📌 Расписание на сегодня",
+            input_message_content=types.InputTextMessageContent(
+                message_text=message_text_today
             ),
+            description="Нажмите, чтобы отправить расписание на сегодня в чат.",
+        ),
+        types.InlineQueryResultArticle(
+            id="2",  # Уникальный идентификатор результата
+            title="📅 Расписание на неделю",
+            input_message_content=types.InputTextMessageContent(
+                message_text=message_text_week
+            ),
+            description="Нажмите, чтобы отправить расписание на неделю в чат.",
         )
-        for index, cmd in enumerate(commands)
     ]
 
     # Отправляем результаты
-    await inline_query.answer(results, cache_time=1)
+    await query.answer(results, cache_time=1, is_personal=True)
