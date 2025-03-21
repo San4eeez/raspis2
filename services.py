@@ -1,10 +1,9 @@
-# services.py
-
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 from typing import List, Optional
 from models import GROUPS, TEACHERS
+
 
 def parse_lesson_number_and_time(lesson_number_and_time: str) -> str:
     """Разделяет номер урока и время."""

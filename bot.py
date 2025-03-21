@@ -1,5 +1,3 @@
-# bot.py
-
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from handlers import router

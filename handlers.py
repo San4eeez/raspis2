@@ -1,6 +1,4 @@
-# handlers.py
-
-from aiogram import Router, types, Bot
+from aiogram import Router, types
 from aiogram.filters import Command, CommandObject
 from aiogram.types import (
     Message,
@@ -9,7 +7,6 @@ from aiogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
     CallbackQuery,
-    InlineQuery,
     InlineQueryResultArticle,
     InputTextMessageContent,
 )
@@ -18,8 +15,14 @@ from datetime import datetime
 from models import GROUPS, TEACHERS
 from services import fetch_schedule
 import json
+import asyncio
+from aiogram import Router, types
+from aiogram.filters import Command
+from analytics import log_request, send_analytics
 
 router = Router()
+
+
 
 # Загружаем данные о группах пользователей из файла (если он существует)
 try:
@@ -38,6 +41,11 @@ def save_user_groups():
 def get_user_group(user_id: int) -> int:
     """Возвращает группу пользователя или группу по умолчанию, если пользователь не выбран."""
     return user_groups.get(str(user_id), 44)  # Используем строковый ключ для JSON
+
+
+def split_message(text: str, max_length: int = 4096) -> list[str]:
+    """Разбивает текст на части, каждая из которых не превышает max_length символов."""
+    return [text[i:i + max_length] for i in range(0, len(text), max_length)]
 
 
 @router.message(Command("start"))
@@ -88,7 +96,12 @@ async def button_handler(message: Message, command: CommandObject = None):
         return
 
     message_text = "\n\n".join(schedule) if schedule else "Расписание не найдено."
-    await message.answer(code(message_text), parse_mode="MarkdownV2")
+
+    # Разбиваем сообщение на части и отправляем
+    message_parts = split_message(message_text)
+    for part in message_parts:
+        await message.answer(code(part), parse_mode="MarkdownV2")
+        await asyncio.sleep(1)  # Задержка между сообщениями
 
 
 @router.callback_query()
@@ -108,7 +121,12 @@ async def callback_handler(callback: CallbackQuery):
         schedule = fetch_schedule(teacher_id, entity_type="teacher", target_date=today_date)
         message_text = f"Расписание преподавателя {teacher_name}:\n\n" + "\n\n".join(
             schedule) if schedule else "Расписание не найдено."
-        await callback.message.answer(code(message_text), parse_mode="MarkdownV2")
+
+        # Разбиваем сообщение на части и отправляем
+        message_parts = split_message(message_text)
+        for part in message_parts:
+            await callback.message.answer(code(part), parse_mode="MarkdownV2")
+            await asyncio.sleep(1)  # Задержка между сообщениями
     await callback.answer()
 
 
@@ -118,34 +136,40 @@ async def inline_handler(query: types.InlineQuery):
     user_id = query.from_user.id
     group_id = get_user_group(user_id)
 
-    # Получаем расписание на сегодня
-    today_date = datetime.now().strftime("%d.%m.%Y")
-    schedule_today = fetch_schedule(group_id, entity_type="group", target_date=today_date)
-    message_text_today = "\n\n".join(schedule_today) if schedule_today else "Расписание на сегодня не найдено."
+    # Получаем расписание
+    schedule = fetch_schedule(group_id, entity_type="group")
+    day_shedule = fetch_schedule(group_id, entity_type="group", target_date=datetime.now().strftime("%d.%m.%Y"))
+    message_text = "\n\n".join(schedule) if schedule else "Расписание не найдено."
+    day_text = "\n\n".join(day_shedule) if schedule else "Расписание не найдено."
 
-    # Получаем расписание на неделю
-    schedule_week = fetch_schedule(group_id, entity_type="group")
-    message_text_week = "\n\n".join(schedule_week) if schedule_week else "Расписание на неделю не найдено."
+    # Разбиваем сообщения на части
+    message_parts = split_message(message_text)
+    day_parts = split_message(day_text)
 
-    # Формируем результаты
-    results = [
-        types.InlineQueryResultArticle(
-            id="1",  # Уникальный идентификатор результата
-            title="📌 Расписание на сегодня",
-            input_message_content=types.InputTextMessageContent(
-                message_text=message_text_today
-            ),
-            description="Нажмите, чтобы отправить расписание на сегодня в чат.",
-        ),
-        types.InlineQueryResultArticle(
-            id="2",  # Уникальный идентификатор результата
-            title="📅 Расписание на неделю",
-            input_message_content=types.InputTextMessageContent(
-                message_text=message_text_week
-            ),
-            description="Нажмите, чтобы отправить расписание на неделю в чат.",
+    # Формируем результаты с учетом частей
+    results = []
+    for i, part in enumerate(message_parts):
+        results.append(
+            InlineQueryResultArticle(
+                id=f"1_{i}",  # Уникальный идентификатор результата
+                title=f"📅 Ближайшее расписание (часть {i + 1})",
+                input_message_content=InputTextMessageContent(
+                    message_text=part
+                ),
+                description="Нажмите, чтобы отправить расписание в чат.",
+            )
         )
-    ]
+    for i, part in enumerate(day_parts):
+        results.append(
+            InlineQueryResultArticle(
+                id=f"2_{i}",  # Уникальный идентификатор результата
+                title=f"📅 Сегодня (часть {i + 1})",
+                input_message_content=InputTextMessageContent(
+                    message_text=part
+                ),
+                description="Нажмите, чтобы отправить расписание в чат.",
+            )
+        )
 
-    # Отправляем результаты
+    # Отправляем результат
     await query.answer(results, cache_time=1, is_personal=True)
