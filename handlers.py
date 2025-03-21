@@ -1,4 +1,4 @@
-from aiogram import Router, types
+from aiogram import Router, types, Bot
 from aiogram.filters import Command, CommandObject
 from aiogram.types import (
     Message,
@@ -14,15 +14,11 @@ from aiogram.utils.markdown import code
 from datetime import datetime
 from models import GROUPS, TEACHERS
 from services import fetch_schedule
+from analytics import log_request, send_analytics
 import json
 import asyncio
-from aiogram import Router, types
-from aiogram.filters import Command
-from analytics import log_request, send_analytics
 
 router = Router()
-
-
 
 # Загружаем данные о группах пользователей из файла (если он существует)
 try:
@@ -60,9 +56,20 @@ async def start(message: Message):
     await message.answer("Привет! Выбери нужную опцию:", reply_markup=keyboard)
 
 
+@router.message(Command("analytics"))
+async def analytics_command(message: types.Message, bot: Bot):
+    """Обработчик команды /analytics."""
+    await send_analytics(bot, message.chat.id)  # Передаем chat_id
+
+
 @router.message()
 async def button_handler(message: Message, command: CommandObject = None):
     """Обработчик кнопок и команд с упоминанием бота."""
+    # Логируем запрос
+    user_id = message.from_user.id
+    username = message.from_user.username or "Без имени"
+    log_request(user_id, username)
+
     # Если команда пришла с упоминанием бота, извлекаем текст команды
     if command and command.prefix == "@":
         command_text = command.command

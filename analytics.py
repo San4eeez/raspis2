@@ -1,7 +1,6 @@
 import json
-from datetime import datetime, date
-from typing import Dict, List
-from aiogram import Bot, types
+from datetime import date
+from aiogram import Bot
 from aiogram.types import FSInputFile
 
 # Словарь для хранения аналитики
