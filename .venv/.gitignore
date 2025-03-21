@@ -1,0 +1,9 @@
+# .gitignore
+
+# Игнорируем .env
+.env
+
+# Игнорируем виртуальные окружения и кэш Python
+venv/
+__pycache__/
+*.pyc
