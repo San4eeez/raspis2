@@ -9,11 +9,11 @@ def parse_lesson_number_and_time(lesson_number_and_time: str) -> str:
     """Разделяет номер урока и время."""
     if lesson_number_and_time:
         if len(lesson_number_and_time) >= 2 and lesson_number_and_time[1] == '0':
-            # Если второй символ 0 (например, 10)
+            # Если второй символ 0
             lesson_number = lesson_number_and_time[:2]
             time = lesson_number_and_time[2:]
         else:
-            # Если второй символ не 0 (например, 5)
+            # Если второй символ не 0
             lesson_number = lesson_number_and_time[:1]
             time = lesson_number_and_time[1:]
         return f"{lesson_number} {time}"  # Добавляем пробел

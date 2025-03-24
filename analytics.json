@@ -1,14 +1,16 @@
 {
     "total_users": 1,
     "daily_requests": {
-        "2025-03-21": 1
+        "2025-03-21": 1,
+        "2025-03-24": 3
     },
     "user_requests": {
         "806697034": {
             "username": "doxling",
-            "total_requests": 1,
+            "total_requests": 4,
             "daily_requests": {
-                "2025-03-21": 1
+                "2025-03-21": 1,
+                "2025-03-24": 3
             }
         }
     }

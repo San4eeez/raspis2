@@ -49,7 +49,7 @@ async def start(message: Message):
     """Обработчик команды /start."""
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
         [KeyboardButton(text="📌 Расписание на сегодня")],
-        [KeyboardButton(text="📅 Ближайшее расписание")],
+        [KeyboardButton(text="📅 Расписание на неделю")],
         [KeyboardButton(text="🔄 Сменить группу")],
         [KeyboardButton(text="👨‍🏫 Найти преподавателя")]
     ])
@@ -82,7 +82,7 @@ async def button_handler(message: Message, command: CommandObject = None):
     if command_text == "📌 Расписание на сегодня" or command_text == "сегодня":
         today_date = datetime.now().strftime("%d.%m.%Y")
         schedule = fetch_schedule(group_id, entity_type="group", target_date=today_date)
-    elif command_text == "📅 Ближайшее расписание" or command_text == "расписание":
+    elif command_text == "📅 Расписание на неделю" or command_text == "расписание":
         schedule = fetch_schedule(group_id, entity_type="group")
     elif command_text == "🔄 Сменить группу" or command_text == "сменить_группу":
         keyboard = InlineKeyboardMarkup(
@@ -159,7 +159,7 @@ async def inline_handler(query: types.InlineQuery):
         results.append(
             InlineQueryResultArticle(
                 id=f"1_{i}",  # Уникальный идентификатор результата
-                title=f"📅 Ближайшее расписание (часть {i + 1})",
+                title=f"📅 Расписание на неделю (часть {i + 1})",
                 input_message_content=InputTextMessageContent(
                     message_text=part
                 ),
